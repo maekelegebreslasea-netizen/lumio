@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lumio - AI Study Assistant</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#f0f2ff;font-family:'Inter',sans-serif;color:#1a1f3a}
+#root{height:100vh;display:flex;justify-content:center;align-items:flex-start}
+.app{display:flex;flex-direction:column;height:100vh;width:100%;max-width:500px;background:#fff;box-shadow:0 0 60px #0003;position:relative;overflow:hidden}
+/* AUTH */
+.auth-wrap{min-height:100vh;background:#f0f2ff;display:flex;align-items:center;justify-content:center;padding:16px}
+.auth-box{width:100%;max-width:400px;background:#fff;border-radius:24px;padding:32px 28px;box-shadow:0 8px 40px #0002}
+.logo-ic{width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#f0c84a,#e07d2a);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px;box-shadow:0 8px 24px #f0c84a30}
+.brand{font-family:'Playfair Display',serif;font-size:2rem;color:#d4a017;text-align:center;margin-bottom:6px}
+.sub{font-size:.84rem;color:#6b7299;text-align:center;line-height:1.6;margin-bottom:24px}
+.tabs{display:flex;gap:4px;background:#f0f2ff;border-radius:12px;padding:4px;margin-bottom:18px}
+.tab{flex:1;padding:10px;border:none;background:transparent;border-radius:9px;font-family:'Inter',sans-serif;font-weight:600;font-size:.9rem;cursor:pointer;color:#6b7299;transition:.15s}
+.tab.on{background:#fff;color:#1a1f3a;box-shadow:0 2px 8px #0001}
+.lbl{font-size:.72rem;font-weight:700;color:#6b7299;letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px;display:block}
+input[type=email],input[type=password],input[type=text],textarea,.inp{width:100%;padding:12px 14px;background:#f5f7ff;border:1.5px solid #dde2f0;border-radius:12px;color:#1a1f3a;font-family:'Inter',sans-serif;font-size:.95rem;outline:none;margin-bottom:12px;transition:.2s}
+input:focus,.inp:focus,textarea:focus{border-color:#d4a017;background:#fff}
+textarea{resize:vertical;min-height:120px;line-height:1.6}
+.btn-g{width:100%;padding:14px;background:linear-gradient(135deg,#f0c84a,#e07d2a);border:none;border-radius:12px;color:#000;font-family:'Inter',sans-serif;font-weight:700;font-size:1rem;cursor:pointer;transition:.15s}
+.btn-g:disabled{opacity:.4;cursor:not-allowed}
+.btn-s{padding:11px 18px;background:#f0f2ff;border:1px solid #dde2f0;border-radius:12px;color:#6b7299;font-family:'Inter',sans-serif;font-weight:600;cursor:pointer;font-size:.88rem;transition:.15s}
+.btn-r{padding:11px 18px;background:#fee2e2;border:1px solid #fca5a5;border-radius:12px;color:#dc2626;font-family:'Inter',sans-serif;font-weight:600;cursor:pointer;font-size:.88rem}
+.alert{padding:10px 14px;border-radius:10px;font-size:.84rem;margin-bottom:12px;text-align:center}
+.a-err{background:#fee2e2;color:#dc2626}.a-ok{background:#d1fae5;color:#059669}
+/* TOP */
+.top{padding:10px 14px 8px;background:#fff;border-bottom:1px solid #eef0f8;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:8px}
+.brand-sm{font-family:'Playfair Display',serif;font-size:1.1rem;color:#d4a017;flex-shrink:0}
+.top-chips{display:flex;gap:5px;overflow:hidden}
+.chip{padding:4px 10px;border-radius:20px;font-size:.68rem;font-weight:700;cursor:pointer;border:none;font-family:'Inter',sans-serif;white-space:nowrap;flex-shrink:0}
+.chip-gold{background:#fef9e7;border:1px solid #f0c84a44;color:#d4a017}
+.chip-blue{background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb}
+/* NAV */
+.nav{display:flex;background:#fff;border-top:1px solid #eef0f8;flex-shrink:0}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 2px 6px;cursor:pointer;border:none;background:transparent;font-family:'Inter',sans-serif;position:relative;transition:.1s}
+.ni-ic{font-size:19px;opacity:.25;transition:.15s}
+.ni-lb{font-size:.52rem;color:#9ca3af;font-weight:500}
+.ni.on .ni-ic{opacity:1}.ni.on .ni-lb{color:#d4a017;font-weight:700}
+.ni-dot{position:absolute;top:5px;right:calc(50% - 13px);width:7px;height:7px;border-radius:50%;background:#22c55e;border:2px solid #fff}
+/* PAGE */
+.page{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+.pg-title{font-family:'Playfair Display',serif;font-size:1.3rem;color:#d4a017;margin-bottom:4px}
+.pg-sub{font-size:.8rem;color:#6b7299;margin-bottom:18px;line-height:1.5}
+/* CARDS */
+.subj-card{background:#fff;border:1px solid #eef0f8;border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:12px}
+.subj-card:hover{border-color:#dde2f0;box-shadow:0 4px 14px #0001}
+.new-card{border:2px dashed #dde2f0;border-radius:14px;padding:14px;margin-bottom:14px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.15s;background:transparent}
+.new-card:hover{border-color:#d4a017;background:#fef9e7}
+.mode-btn{display:flex;align-items:center;gap:14px;padding:15px;background:#fff;border:1.5px solid #eef0f8;border-radius:14px;cursor:pointer;transition:.15s;width:100%;margin-bottom:10px;text-align:left}
+.mode-btn:hover{border-color:#d4a01744;box-shadow:0 4px 14px #0001}
+.mode-btn:disabled{opacity:.4;cursor:not-allowed}
+.mode-ic{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.mat-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f5f7ff;border:1px solid #eef0f8;border-radius:11px;margin-bottom:7px}
+.add-mat-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:transparent;border:2px dashed #dde2f0;border-radius:11px;cursor:pointer;font-family:'Inter',sans-serif;color:#6b7299;font-size:.85rem;margin-bottom:10px;transition:.15s}
+.add-mat-btn:hover{border-color:#d4a017;color:#d4a017}
+.lvl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.lvl{padding:12px;border-radius:11px;border:1.5px solid #dde2f0;cursor:pointer;background:#f5f7ff;transition:.15s;text-align:left}
+.lvl.on{background:#fef9e7;border-color:#f0c84a}
+/* LESSON */
+.lesson-page{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.lesson-hdr{padding:10px 14px 8px;background:#fff;border-bottom:1px solid #eef0f8;flex-shrink:0}
+.msgs-area{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
+.msg-block{display:flex;flex-direction:column;gap:3px}
+.msg-who{font-size:.65rem;font-weight:700;letter-spacing:.5px;margin-left:36px;margin-bottom:2px}
+.msg-r{display:flex;gap:8px;align-items:flex-end}
+.msg-r.usr{flex-direction:row-reverse}
+.av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:2px solid #eef0f8}
+.bub{padding:10px 14px;border-radius:16px;font-size:.9rem;line-height:1.75;max-width:86%;word-break:break-word}
+.bub-L{background:#fef9e7;border:1px solid #f0c84a44;border-bottom-left-radius:3px}
+.bub-A{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-bottom-left-radius:3px}
+.bub-S{background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;border-bottom-left-radius:3px}
+.bub-U{background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d;border-bottom-right-radius:3px}
+.typing{display:flex;gap:4px;align-items:center;padding:10px 14px;border-radius:14px}
+.dp{width:6px;height:6px;border-radius:50%;animation:db 1.1s infinite}
+.dp:nth-child(2){animation-delay:.18s}.dp:nth-child(3){animation-delay:.36s}
+@keyframes db{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-5px)}}
+.listen-btn{display:flex;align-items:center;gap:5px;padding:4px 11px;background:#f0f2ff;border:1px solid #dde2f0;border-radius:20px;color:#6b7299;font-family:'Inter',sans-serif;font-size:.72rem;cursor:pointer;margin-left:36px;margin-top:2px;width:fit-content;transition:.1s}
+.listen-btn:hover{border-color:#2563eb;color:#2563eb}
+/* INPUT */
+.inp-area{padding:8px 12px 6px;border-top:1px solid #eef0f8;flex-shrink:0;background:#fff}
+.inp-row{display:flex;gap:6px;align-items:flex-end}
+.mic-btn{width:44px;height:44px;border-radius:50%;background:#22c55e;border:none;cursor:pointer;font-size:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s;-webkit-tap-highlight-color:transparent}
+.mic-btn.on{background:#ef4444;animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 #ef444450}50%{box-shadow:0 0 0 8px transparent}}
+.txt-inp{flex:1;padding:10px 14px;background:#f5f7ff;border:1.5px solid #dde2f0;border-radius:20px;color:#1a1f3a;font-family:'Inter',sans-serif;font-size:.9rem;outline:none;resize:none;min-height:44px;max-height:80px;line-height:1.4;transition:.15s}
+.txt-inp:focus{border-color:#c4ccee}.txt-inp:disabled{opacity:.5}
+.send-btn{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#f0c84a,#e07d2a);border:none;cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.send-btn:disabled{opacity:.3;cursor:not-allowed}
+.hints{display:flex;gap:5px;margin-top:5px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.hints::-webkit-scrollbar{display:none}
+.hint{padding:5px 11px;background:#f5f7ff;border:1px solid #dde2f0;border-radius:14px;font-size:.73rem;color:#6b7299;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.hint:hover{border-color:#d4a017;color:#d4a017}
+/* QUIZ */
+.q-card{background:#fff;border:1px solid #eef0f8;border-radius:13px;padding:15px;margin-bottom:10px}
+.opt{padding:9px 13px;background:#f5f7ff;border:1.5px solid #dde2f0;border-radius:9px;cursor:pointer;font-size:.85rem;display:flex;gap:8px;margin-bottom:6px;line-height:1.5;transition:.1s;-webkit-tap-highlight-color:transparent}
+.opt.sel{border-color:#d4a017;background:#fef9e7}
+.opt.ok{border-color:#059669;background:#d1fae5;color:#065f46}
+.opt.no{border-color:#dc2626;background:#fee2e2;color:#991b1b}
+.expl{margin-top:8px;padding:9px 13px;background:#f0fdf4;border-left:3px solid #059669;border-radius:7px;font-size:.78rem;color:#065f46;line-height:1.6}
+/* SUMMARY & WHERE */
+.sum-box{background:#fef9e7;border:1px solid #f0c84a44;border-radius:14px;padding:16px;margin-bottom:14px}
+.where-box{background:#f5f7ff;border:1px solid #eef0f8;border-radius:13px;padding:14px;margin-bottom:12px}
+.where-btn{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#fff;border:1.5px solid #eef0f8;border-radius:11px;cursor:pointer;font-family:'Inter',sans-serif;font-size:.86rem;margin-bottom:8px;width:100%;text-align:left;transition:.1s;-webkit-tap-highlight-color:transparent}
+.where-btn:hover{border-color:#d4a017;background:#fef9e7}
+/* MODAL */
+.overlay{position:fixed;inset:0;background:#00000065;z-index:300;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:#fff;border-radius:22px 22px 0 0;padding:20px 20px 32px;width:100%;max-width:500px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.handle{width:36px;height:4px;background:#dde2f0;border-radius:2px;margin:0 auto 18px}
+.sh-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:#d4a017;margin-bottom:14px}
+.emoji-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.emj{width:36px;height:36px;border-radius:9px;border:2px solid transparent;background:#f5f7ff;cursor:pointer;font-size:18px;-webkit-tap-highlight-color:transparent}
+.emj.on{border-color:#d4a017;background:#fef9e7}
+.clr-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.clr{width:30px;height:30px;border-radius:50%;border:3px solid transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.clr.on{border-color:#1a1f3a;transform:scale(1.15)}
+.tab-row{display:flex;gap:5px;margin-bottom:12px}
+.tb{flex:1;padding:8px;background:#f5f7ff;border:1px solid #dde2f0;border-radius:9px;cursor:pointer;font-family:'Inter',sans-serif;font-size:.77rem;font-weight:600;color:#6b7299;-webkit-tap-highlight-color:transparent}
+.tb.on{background:#fef9e7;border-color:#f0c84a;color:#d4a017}
+.drop-zone{border:2px dashed #dde2f0;border-radius:13px;padding:30px 20px;text-align:center;cursor:pointer;background:#f5f7ff;transition:.15s;-webkit-tap-highlight-color:transparent}
+.drop-zone:hover{border-color:#d4a017;background:#fef9e7}
+/* UTILS */
+.spin{display:inline-block;border:2.5px solid #dde2f0;border-top-color:#d4a017;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.sec-title{font-size:.7rem;font-weight:700;color:#6b7299;letter-spacing:.8px;text-transform:uppercase;margin:16px 0 10px}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600;margin-right:5px;margin-bottom:5px}
+.xp-pop{position:fixed;top:55px;right:16px;background:linear-gradient(135deg,#f0c84a,#e07d2a);color:#000;padding:6px 14px;border-radius:20px;font-weight:800;font-size:.82rem;z-index:999;animation:xpa 2.2s forwards;pointer-events:none}
+@keyframes xpa{0%{opacity:0;transform:scale(.8)}15%{opacity:1}80%{opacity:1;transform:translateY(-14px)}100%{opacity:0;transform:translateY(-22px)}}
+.progress-bar{height:4px;background:#f0e8c0;border-radius:2px;overflow:hidden;margin-top:8px;width:140px}
+.progress-fill{height:100%;background:linear-gradient(90deg,#f0c84a,#e07d2a);border-radius:2px;transition:width .4s}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// Configure PDF.js worker
+if(window.pdfjsLib){
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+window.addEventListener('load',function(){
+  try{ startLumio(); }
+  catch(e){
+    document.getElementById('root').innerHTML='<div style="padding:40px;text-align:center;font-family:sans-serif"><h2 style="color:#dc2626">Error: '+e.message+'</h2><p style="color:#6b7299;margin-top:8px">Please refresh the page</p></div>';
+  }
+});
+
+function startLumio(){
+const h=React.createElement;
+const F=React.Fragment;
+const{useState,useEffect,useRef,useCallback,useMemo}=React;
+
+// -- CONFIG --
+const SUPA=window.supabase.createClient(
+  "https://jmsaceushtshgqulreyu.supabase.co",
+  "sb_publishable_DCO2buENQ1j__8cN32TVTQ_miaroN4l"
+);
+const MODEL="claude-haiku-4-5-20251001";
+const S={
+  get:k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}},
+  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}},
+  del:k=>{try{localStorage.removeItem(k)}catch{}}
+};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+// -- PDF TEXT EXTRACTION --
+async function extractPdfText(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=async e=>{
+      try{
+        if(!window.pdfjsLib){resolve("PDF text could not be extracted. Please paste the text manually.");return}
+        const pdf=await pdfjsLib.getDocument({data:e.target.result}).promise;
+        let text="";
+        for(let i=1;i<=Math.min(pdf.numPages,50);i++){
+          const page=await pdf.getPage(i);
+          const content=await page.getTextContent();
+          text+=content.items.map(item=>item.str).join(" ")+"\n";
+        }
+        resolve(text.trim()||"Could not extract text from this PDF. Please paste the text manually.");
+      }catch(err){resolve("PDF error: "+err.message+". Please paste the text manually.")}
+    };
+    reader.onerror=()=>resolve("Could not read file. Please paste the text manually.");
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// -- FILE READER --
+async function readMat(file){
+  const kind=file.type.startsWith("image/")?"image":file.type==="application/pdf"?"pdf":"text";
+  if(kind==="text"){
+    return new Promise(res=>{const r=new FileReader();r.onload=e=>res({kind:"text",text:e.target.result,name:file.name});r.readAsText(file)});
+  }
+  if(kind==="pdf"){
+    const text=await extractPdfText(file);
+    return{kind:"text",text,name:file.name}; // Store as text after extraction
+  }
+  if(kind==="image"){
+    // For images: store as base64 for AI analysis, max 4MB
+    if(file.size>4*1024*1024)return{kind:"text",text:"Image too large. Please describe it in text instead.",name:file.name};
+    return new Promise(res=>{
+      const r=new FileReader();
+      r.onload=e=>res({kind:"image",mimeType:file.type,b64:e.target.result.split(",")[1],name:file.name,text:""});
+      r.readAsDataURL(file);
+    });
+  }
+}
+
+// -- VOICE --
+let vList=[];
+function loadVoices(){vList=window.speechSynthesis?.getVoices()||[]}
+if(window.speechSynthesis){setTimeout(loadVoices,500);speechSynthesis.onvoiceschanged=loadVoices}
+function speak(text,gender){
+  if(!window.speechSynthesis||!text)return;
+  try{
+    speechSynthesis.cancel();
+    const clean=text.replace(/<[^>]+>/g,"").replace(/\*\*/g,"").replace(/[\u{1F300}-\u{1F9FF}]/gu,"").replace(/\s+/g," ").trim().slice(0,600);
+    if(!clean)return;
+    const u=new SpeechSynthesisUtterance(clean);
+    if(vList.length===0)vList=speechSynthesis.getVoices();
+    const en=vList.filter(v=>v.lang.startsWith("en"));
+    u.voice=gender==="male"
+      ?(en.find(v=>/male|david|mark|daniel|james/i.test(v.name))||en[1]||en[0])
+      :(en.find(v=>/female|samantha|victoria|karen|susan/i.test(v.name))||en[0]);
+    u.lang="en-US";u.rate=0.88;u.pitch=gender==="male"?0.8:1.1;u.volume=1;
+    setTimeout(()=>{speechSynthesis.speak(u);if(speechSynthesis.paused)speechSynthesis.resume()},80);
+  }catch(e){}
+}
+
+// -- API --
+async function callAI(key,system,messages,tries=3){
+  // Check for image content (must go direct to Anthropic)
+  const hasImage=messages.some(m=>Array.isArray(m.content)&&m.content.some(c=>c.type==="image"));
+  for(let i=0;i<tries;i++){
+    try{
+      let r;
+      if(hasImage){
+        r=await fetch("https://api.anthropic.com/v1/messages",{
+          method:"POST",
+          headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+          body:JSON.stringify({model:MODEL,max_tokens:500,system,messages})
+        });
+      } else {
+        r=await fetch("/.netlify/functions/chat",{
+          method:"POST",
+          headers:{"Content-Type":"application/json","x-api-key":key},
+          body:JSON.stringify({model:MODEL,max_tokens:500,system,messages})
+        });
+      }
+      if(r.status===429||r.status===529){if(i<tries-1){await sleep(8000*(i+1));continue}throw new Error("Too many requests. Wait 30 seconds and try again.")}
+      if(r.status===401)throw new Error("Invalid API key. Update it in Profile.");
+      if(!r.ok)throw new Error("Error "+r.status+". Try again.");
+      const d=await r.json();
+      if(d.error)throw new Error(d.error.message||"API error");
+      return d.content.filter(b=>b.type==="text").map(b=>b.text).join("");
+    }catch(e){
+      if(e.message.includes("requests")||e.message.includes("key")||e.message.includes("Error")||e.message.includes("Invalid"))throw e;
+      if(i<tries-1){await sleep(2000);continue}
+      throw e;
+    }
+  }
+}
+
+function parseJSON(raw){
+  try{
+    let s=raw.replace(/```json/gi,"").replace(/```/gi,"").trim();
+    let start=s.indexOf("{");
+    let start2=s.indexOf("[");
+    if(start===-1&&start2===-1)return null;
+    if(start===-1)start=start2;
+    else if(start2!==-1&&start2<start)start=start2;
+    s=s.slice(start);
+    return JSON.parse(s);
+  }catch{return null}
+}
+function hl(t){if(!t)return"";return t.replace(/\*\*(.*?)\*\*/g,'<strong style="color:#92400e">$1</strong>').replace(/\n/g,"<br/>")}
+
+// -- DB --
+const db={
+  async subs(uid){const{data}=await SUPA.from('subjects').select('*').eq('user_id',uid).order('created_at');return data||[]},
+  async saveSub(s,uid){await SUPA.from('subjects').upsert({id:s.id,user_id:uid,name:s.name,emoji:s.emoji,color:s.color,sessions:s.sessions||0})},
+  async delSub(id){await SUPA.from('subjects').delete().eq('id',id)},
+  async mats(sid){const{data}=await SUPA.from('materials').select('*').eq('subject_id',sid).order('created_at');return data||[]},
+  async saveMat(m,sid,uid){await SUPA.from('materials').upsert({id:m.id,subject_id:sid,user_id:uid,name:m.name,kind:m.kind,text_content:m.text||''})},
+  async delMat(id){await SUPA.from('materials').delete().eq('id',id)},
+  async saveSession(key,uid,msgs){try{await SUPA.from('sessions').upsert({subject_id:key,user_id:uid,messages:JSON.stringify(msgs.slice(-40)),updated_at:new Date().toISOString()},{onConflict:'subject_id,user_id'})}catch{}},
+  async loadSession(key,uid){try{const{data}=await SUPA.from('sessions').select('messages').eq('subject_id',key).eq('user_id',uid).single();return data?JSON.parse(data.messages):null}catch{return null}},
+};
+
+// -- PROMPTS --
+function matText(mats){return mats.filter(m=>m.text&&m.text.length>0).map(m=>'=== SOURCE: "'+m.name+'" ===\n'+m.text.slice(0,3000)).join("\n\n")}
+
+function sysLumio(subj,mats,level,lang){
+  const lv={easy:"Use simple language and short sentences.",medium:"Use university-level language.",hard:"Use academic depth and rigor.",mixed:"Vary the difficulty."};
+  return`You are Lumio, a friendly AI tutor for "${subj}". 
+RULES:
+- Respond ONLY in ${lang}
+- Base everything 100% on the source materials below
+- If material is in another language, translate and teach in ${lang}  
+- Never add outside knowledge
+- Use **bold** for key terms
+- ${lv[level]||lv.medium}
+- MAX 3 sentences + exactly 1 question to the student
+- Push the student forward - never monologue
+SOURCE MATERIALS:
+${matText(mats)||"No text materials uploaded yet."}`;
+}
+
+function sysAtlas(subj,mats,level,lang,asked){
+  const lv={easy:"Simple.",medium:"University level.",hard:"Academic.",mixed:"Varied."};
+  return`You are Atlas, a structured AI tutor for "${subj}".
+RULES: Respond in ${lang}. Base 100% on materials. **Bold** key terms. ${lv[level]||lv.medium} Already asked: ${asked.slice(-10).join("; ")||"none"}. MAX 3 sentences + 1 question.
+MATERIALS:\n${matText(mats)||"None."}`;
+}
+
+function sysSpark(subj,mats,lang,asked){
+  return`You are Spark, a sharp AI challenger for "${subj}".
+RULES: Respond in ${lang}. Base 100% on materials. Challenge thinking. Already asked: ${asked.slice(-10).join("; ")||"none"}. MAX 2 sentences + 1 probing question.
+MATERIALS:\n${matText(mats)||"None."}`;
+}
+
+function sysChat(subj,mats,lang){
+  return`You are Lumio, AI study assistant for "${subj}". Respond in ${lang}. Base 100% ONLY on materials. Give detailed, exam-ready answers. **Bold** key terms. Cite [Source: "name"]. If not in materials, say so.
+MATERIALS:\n${matText(mats)||"None."}`;
+}
+
+// Build clean alternating history for API
+function buildHist(msgs){
+  const hist=[];
+  for(const m of msgs){
+    const role=m.role==="user"?"user":"assistant";
+    if(hist.length>0&&hist[hist.length-1].role===role)continue;
+    hist.push({role,content:m.text});
+  }
+  if(hist.length===0||hist[0].role!=="user")return null;
+  return hist;
+}
+
+// -- MIC --
+function useMic(onResult){
+  const[on,setOn]=useState(false);
+  const ref=useRef(null);
+  const start=useCallback(()=>{
+    if(on){try{ref.current?.stop()}catch{}setOn(false);return}
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){alert("Voice input requires Chrome browser.");return}
+    try{
+      const r=new SR();ref.current=r;
+      r.lang="en-US";r.continuous=false;r.interimResults=false;
+      r.onstart=()=>setOn(true);
+      r.onend=()=>setOn(false);
+      r.onerror=e=>{setOn(false);if(e.error==="not-allowed")alert("Microphone blocked. Go to browser Settings and allow Microphone for this site.")};
+      r.onresult=e=>{const t=e.results?.[0]?.[0]?.transcript;setOn(false);if(t)onResult(t)};
+      r.start();
+    }catch(e){setOn(false)}
+  },[on,onResult]);
+  return[on,start];
+}
+
+// -- LESSON UI --
+function LessonUI({msgs,loading,loadingRole,onSend,showHints,lang}){
+  const[inp,setInp]=useState("");
+  const endRef=useRef(null);
+  useEffect(()=>{endRef.current?.scrollIntoView({behavior:"smooth"})},[msgs,loading]);
+  const send=useCallback(text=>{const t=text||inp.trim();if(!t||loading)return;onSend(t);setInp("")},[inp,loading,onSend]);
+  const[micOn,micStart]=useMic(useCallback(t=>{onSend(t)},[onSend]));
+
+  const roleColor=r=>r==="atlas"?"#2563eb":r==="spark"?"#dc2626":"#d4a017";
+  const roleLabel=r=>r==="atlas"?"ATLAS":r==="spark"?"SPARK":"LUMIO";
+  const bubCls=r=>r==="atlas"?"bub bub-A":r==="spark"?"bub bub-S":r==="user"?"bub bub-U":"bub bub-L";
+  const avStyle=r=>r==="atlas"?{background:"#eff6ff",borderColor:"#bfdbfe"}:r==="spark"?{background:"#fff1f2",borderColor:"#fecdd3"}:{background:"#fef9e7",borderColor:"#f0c84a44"};
+  const avIcon=r=>r==="atlas"?"A":r==="spark"?"S":"L";
+  const spkGender=r=>r==="spark"?"male":"female";
+
+  const hints=["I don't understand 🤔","Give an example","Simpler please","Explain deeper","Next topic ->","Where is this from? 📖"];
+
+  return h(F,null,
+    h("div",{className:"msgs-area"},
+      ...msgs.map((m,i)=>{
+        const isU=m.role==="user";
+        return h("div",{key:m.id||i,className:"msg-block"},
+          !isU&&h("div",{className:"msg-who",style:{color:roleColor(m.role)}},roleLabel(m.role)),
+          h("div",{className:"msg-r"+(isU?" usr":"")},
+            !isU&&h("div",{className:"av",style:avStyle(m.role)},avIcon(m.role)),
+            isU&&h("div",{className:"av",style:{background:"#f0fdf4",borderColor:"#bbf7d0"}},"👤"),
+            h("div",{className:bubCls(m.role),dangerouslySetInnerHTML:{__html:hl(m.text)}})
+          ),
+          !isU&&h("button",{className:"listen-btn",onClick:()=>speak(m.text,spkGender(m.role))},"🔊 Listen")
+        );
+      }),
+      loading&&h("div",{className:"msg-block"},
+        h("div",{className:"msg-who",style:{color:roleColor(loadingRole)}},roleLabel(loadingRole)+" thinking..."),
+        h("div",{className:"msg-r"},
+          h("div",{className:"av",style:avStyle(loadingRole)},avIcon(loadingRole)),
+          h("div",{className:"typing",style:{background:loadingRole==="atlas"?"#eff6ff":loadingRole==="spark"?"#fff1f2":"#fef9e7",border:"1px solid "+(loadingRole==="atlas"?"#bfdbfe":loadingRole==="spark"?"#fecdd3":"#f0c84a44")}},
+            h("div",{className:"dp",style:{background:roleColor(loadingRole)}}),
+            h("div",{className:"dp",style:{background:roleColor(loadingRole)}}),
+            h("div",{className:"dp",style:{background:roleColor(loadingRole)}})
+          )
+        )
+      ),
+      h("div",{ref:endRef})
+    ),
+    h("div",{className:"inp-area"},
+      h("div",{className:"inp-row"},
+        h("button",{className:"mic-btn"+(micOn?" on":""),onClick:micStart},micOn?"⏹":"🎤"),
+        h("textarea",{className:"txt-inp",value:inp,onChange:e=>setInp(e.target.value),
+          onKeyDown:e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}},
+          placeholder:"Answer here...",disabled:!!loading,rows:1}),
+        h("button",{className:"send-btn",onClick:()=>send(),disabled:!!loading||!inp.trim()},"➤")
+      ),
+      showHints&&h("div",{className:"hints"},...hints.map(hint=>h("button",{key:hint,className:"hint",onClick:()=>send(hint)},hint)))
+    )
+  );
+}
+
+// -- WHERE TO START --
+function WherePanel({summary,concepts,isReturning,onStart,loading}){
+  if(loading)return h("div",{style:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,padding:24}},
+    h("div",{className:"spin",style:{width:32,height:32,borderWidth:3}}),
+    h("div",{style:{color:"#6b7299",fontSize:".84rem"}},loading)
+  );
+  return h("div",{style:{flex:1,overflowY:"auto",padding:"14px 14px 8px",WebkitOverflowScrolling:"touch"}},
+    summary&&h("div",{className:"sum-box"},
+      h("div",{style:{fontSize:".7rem",fontWeight:700,color:"#d4a017",letterSpacing:".8px",textTransform:"uppercase",marginBottom:8}},"📋 SUMMARY"),
+      h("div",{style:{fontSize:".88rem",lineHeight:1.75},dangerouslySetInnerHTML:{__html:hl(summary)}}),
+      concepts?.length>0&&h("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginTop:10}},
+        ...concepts.map((c,i)=>h("span",{key:i,style:{padding:"4px 11px",borderRadius:20,background:"#fff8e1",border:"1px solid #f0c84a44",color:"#92400e",fontSize:".74rem",fontWeight:600}},typeof c==="string"?c:c.term))
+      )
+    ),
+    h("div",{className:"where-box"},
+      h("div",{style:{fontWeight:700,fontSize:".86rem",marginBottom:12}},isReturning?"👋 Welcome back! Where do you want to continue?":"🎓 Where would you like to start?"),
+      isReturning?h(F,null,
+        h("button",{className:"where-btn",onClick:()=>onStart("continue")},"▶️ ",h("div",null,h("div",{style:{fontWeight:600}},"Continue where we left off"),h("div",{style:{fontSize:".72rem",color:"#6b7299",marginTop:2}},"Pick up from last session"))),
+        h("button",{className:"where-btn",onClick:()=>onStart("beginning")},"🔄 ",h("div",null,h("div",{style:{fontWeight:600}},"Start from the beginning"),h("div",{style:{fontSize:".72rem",color:"#6b7299",marginTop:2}},"Review everything again")))
+      ):h(F,null,
+        h("button",{className:"where-btn",onClick:()=>onStart("beginning")},"📚 ",h("div",null,h("div",{style:{fontWeight:600}},"From the beginning"),h("div",{style:{fontSize:".72rem",color:"#6b7299",marginTop:2}},"Start with the first concept"))),
+        ...(concepts||[]).slice(0,3).map((c,i)=>{const term=typeof c==="string"?c:c.term;const def=typeof c==="object"?c.def:"";return h("button",{key:i,className:"where-btn",onClick:()=>onStart(term)},"⚡ ",h("div",null,h("div",{style:{fontWeight:600}},"Focus on: "+term),h("div",{style:{fontSize:".72rem",color:"#6b7299",marginTop:2}},def)))})
+      )
+    )
+  );
+}
+
+// -- APP --
+function App(){
+  // Auth
+  const[user,setUser]=useState(null);
+  const[authLoad,setAuthLoad]=useState(true);
+  const[authMode,setAuthMode]=useState("login");
+  const[email,setEmail]=useState("");
+  const[pass,setPass]=useState("");
+  const[authMsg,setAuthMsg]=useState({t:"",c:""});
+  const[authBusy,setAuthBusy]=useState(false);
+  const[apiKey,setApiKey]=useState(()=>S.get("lm_key")||"");
+  const[apiIn,setApiIn]=useState("");
+
+  // App
+  const[tab,setTab]=useState("subjects");
+  const[subjects,setSubjects]=useState([]);
+  const[active,setActive]=useState(null);
+  const[bins,setBins]=useState({}); // {matId: {kind,mimeType,b64}}  - only images
+  const[xp,setXp]=useState(0);
+  const[xpPop,setXpPop]=useState(null);
+  const[lessonCount,setLessonCount]=useState(0);
+  const[correctCount,setCorrectCount]=useState(0);
+  const[lessonLevel,setLessonLevel]=useState("medium");
+  const[lang,setLang]=useState(()=>S.get("lm_lang")||"English");
+  const[showLang,setShowLang]=useState(false);
+  const LANGS=["English","Svenska","Español","Français","Deutsch","العربية","हिन्दी","Português","中文","日本語","Türkçe","한국어"];
+  const LANG_FLAGS={"English":"🇬🇧","Svenska":"🇸🇪","Español":"🇪🇸","Français":"🇫🇷","Deutsch":"🇩🇪","العربية":"🇸🇦","हिन्दी":"🇮🇳","Português":"🇧🇷","中文":"🇨🇳","日本語":"🇯🇵","Türkçe":"🇹🇷","한국어":"🇰🇷"};
+
+  // Lesson (Lumio)
+  const[lMsgs,setLMsgs]=useState([]);
+  const[lLoad,setLLoad]=useState(false);
+  const[lState,setLState]=useState("idle"); // idle|loading|start|returning|active
+  const[lSum,setLSum]=useState(null);
+  const[lCon,setLCon]=useState([]);
+  const[lSumLoad,setLSumLoad]=useState(null); // null or loading message
+
+  // Dual (Atlas+Spark)
+  const[dMsgs,setDMsgs]=useState([]);
+  const[dLoad,setDLoad]=useState(null);
+  const[dState,setDState]=useState("idle");
+  const[dSum,setDSum]=useState(null);
+  const[dCon,setDCon]=useState([]);
+  const[dSumLoad,setDSumLoad]=useState(null);
+  const[dAsked,setDAsked]=useState([]);
+
+  // Chat
+  const[cMsgs,setCMsgs]=useState([]);
+  const[cLoad,setCLoad]=useState(false);
+  const[cSum,setCSum]=useState(null);
+  const[cSumLoad,setCSumLoad]=useState(false);
+  const[cInp,setCInp]=useState("");
+  const cEndRef=useRef(null);
+
+  // Quiz
+  const[qData,setQData]=useState(null);
+  const[qLoad,setQLoad]=useState(false);
+  const[qAns,setQAns]=useState({});
+  const[qDone,setQDone]=useState(false);
+  const[qLvl,setQLvl]=useState("medium");
+
+  // Modals
+  const[showNewSub,setShowNewSub]=useState(false);
+  const[showAddMat,setShowAddMat]=useState(false);
+  const[showDel,setShowDel]=useState(null);
+  const[subName,setSubName]=useState("");
+  const[subEmoji,setSubEmoji]=useState("📚");
+  const[subColor,setSubColor]=useState("#f0c84a");
+  const[matTab,setMatTab]=useState("file");
+  const[pasteT,setPasteT]=useState("");
+  const[pasteN,setPasteN]=useState("");
+  const[vidUrl,setVidUrl]=useState("");
+  const[uploading,setUploading]=useState(false);
+  const fileRef=useRef(null);
+
+  const COLORS=["#f0c84a","#34d399","#60a5fa","#a78bfa","#f87171","#fb923c","#22d3ee"];
+  const EMOJIS=["📚","🧪","🏛️","💻","🫀","🔬","⚗️","🌍","➕","🎭","🎵","⚖️","🏥","✈️","🌿","📐","🧬","💡"];
+  const LEVELS=[{id:"easy",l:"🟢 Easy",d:"Basics & beginners"},{id:"medium",l:"🟡 Medium",d:"University level"},{id:"hard",l:"🔴 Hard",d:"Exam level"},{id:"mixed",l:"🎲 Mixed",d:"All levels"}];
+
+  useEffect(()=>{cEndRef.current?.scrollIntoView({behavior:"smooth"})},[cMsgs,cLoad]);
+
+  // Reset lesson state when switching subject
+  useEffect(()=>{
+    if(active){
+      setLMsgs([]);setLState("idle");setLSum(null);setLCon([]);setLSumLoad(null);
+      setDMsgs([]);setDState("idle");setDSum(null);setDCon([]);setDSumLoad(null);setDAsked([]);
+      setCMsgs([]);setCSum(null);setCSumLoad(false);
+    }
+  },[active?.id]);
+
+  // Auth init
+  useEffect(()=>{
+    SUPA.auth.getSession().then(({data:{session}})=>{setUser(session?.user||null);setAuthLoad(false)});
+    const{data:{subscription}}=SUPA.auth.onAuthStateChange((_,s)=>setUser(s?.user||null));
+    return()=>subscription.unsubscribe();
+  },[]);
+
+  // Load subjects
+  useEffect(()=>{
+    if(!user){setSubjects([]);return}
+    (async()=>{
+      const ss=await db.subs(user.id);
+      const withMats=await Promise.all(ss.map(async s=>{
+        const mats=await db.mats(s.id);
+        return{...s,materials:mats.map(m=>({...m,text:m.text_content||""}))};
+      }));
+      setSubjects(withMats);
+    })();
+  },[user?.id]);
+
+  const addXP=useCallback((amt,lbl)=>{setXp(x=>x+amt);setXpPop({lbl,k:Date.now()});setTimeout(()=>setXpPop(null),2400)},[]);
+  const getMats=useCallback(()=>active?.materials||[],[active]);
+  const updateMats=useCallback(async(sid,mats)=>{
+    setSubjects(p=>p.map(s=>s.id===sid?{...s,materials:mats}:s));
+    if(active?.id===sid)setActive(p=>({...p,materials:mats}));
+  },[active]);
+  const hasMats=useMemo(()=>(active?.materials?.length||0)>0,[active]);
+
+  // Auth
+  const signIn=async()=>{setAuthBusy(true);setAuthMsg({t:"",c:""});const{error}=await SUPA.auth.signInWithPassword({email:email.trim(),password:pass});if(error)setAuthMsg({t:"Wrong email or password.",c:"err"});setAuthBusy(false)};
+  const signUp=async()=>{if(pass.length<6){setAuthMsg({t:"Password needs 6+ characters.",c:"err"});return}setAuthBusy(true);setAuthMsg({t:"",c:""});const{data,error}=await SUPA.auth.signUp({email:email.trim(),password:pass});if(error){setAuthMsg({t:error.message,c:"err"});setAuthBusy(false);return}if(data?.user){const{error:e}=await SUPA.auth.signInWithPassword({email:email.trim(),password:pass});if(e)setAuthMsg({t:"Account created! Please sign in.",c:"ok"})}else setAuthMsg({t:"Check your email to confirm.",c:"ok"});setAuthBusy(false)};
+  const signOut=async()=>{await SUPA.auth.signOut();setSubjects([]);setActive(null);setTab("subjects")};
+
+  // Subject CRUD
+  const createSub=async()=>{
+    if(!subName.trim()||!user)return;
+    const s={id:uid(),name:subName.trim(),emoji:subEmoji,color:subColor,sessions:0,materials:[]};
+    await db.saveSub(s,user.id);setSubjects(p=>[...p,s]);
+    setSubName("");setShowNewSub(false);setActive(s);setTab("subject");
+  };
+  const deleteSub=async id=>{await db.delSub(id);setSubjects(p=>p.filter(s=>s.id!==id));setShowDel(null);if(active?.id===id){setActive(null);setTab("subjects")}};
+  
+  // Material upload
+  const onFile=async e=>{
+    const files=Array.from(e.target.files||[]);
+    if(!files.length||!active||!user)return;
+    e.target.value="";
+    setUploading(true);
+    for(const f of files){
+      try{
+        const data=await readMat(f);
+        if(!data)continue;
+        const mat={id:uid(),name:f.name,kind:data.kind,text:data.text||""};
+        // For images, keep in memory for AI vision
+        if(data.kind==="image"&&data.b64){
+          setBins(prev=>({...prev,[mat.id]:{kind:"image",mimeType:data.mimeType,b64:data.b64}}));
+        }
+        await db.saveMat(mat,active.id,user.id);
+        await updateMats(active.id,[...(active.materials||[]),mat]);
+      }catch(err){alert("Error reading "+f.name+": "+err.message)}
+    }
+    setUploading(false);setShowAddMat(false);
+  };
+  const addPaste=async()=>{
+    if(!pasteT.trim()||!active||!user)return;
+    const mat={id:uid(),name:pasteN.trim()||"Text "+(active.materials?.length+1||1),kind:"text",text:pasteT.trim()};
+    await db.saveMat(mat,active.id,user.id);
+    await updateMats(active.id,[...(active.materials||[]),mat]);
+    setPasteT("");setPasteN("");setShowAddMat(false);
+  };
+  const addVid=async()=>{
+    if(!vidUrl.trim()||!active||!user)return;
+    const mat={id:uid(),name:"Video: "+vidUrl.slice(0,50),kind:"video",text:"[Video] "+vidUrl.trim()};
+    await db.saveMat(mat,active.id,user.id);
+    await updateMats(active.id,[...(active.materials||[]),mat]);
+    setVidUrl("");setShowAddMat(false);
+  };
+  const delMat=async id=>{
+    if(!active)return;
+    await db.delMat(id);
+    await updateMats(active.id,(active.materials||[]).filter(m=>m.id!==id));
+    setBins(prev=>{const n={...prev};delete n[id];return n});
+  };
+
+  // Build first message content (may include images)
+  function buildFirstMsg(mats,prompt){
+    const imageMats=mats.filter(m=>m.kind==="image"&&bins[m.id]);
+    if(imageMats.length===0)return prompt;
+    const parts=imageMats.map(m=>({type:"image",source:{type:"base64",media_type:bins[m.id].mimeType,data:bins[m.id].b64}}));
+    parts.push({type:"text",text:prompt});
+    return parts;
+  }
+
+  // Summary loader
+  async function loadSummary(mats,setSum,setCon,setSumLoad,setState,hasSaved){
+    setSumLoad("Generating summary...");
+    const mt=matText(mats);
+    const prompt=`Generate a study summary in ${lang} for the given materials.
+Return ONLY valid JSON: {"summary":"2-3 sentence overview","concepts":[{"term":"key concept","def":"brief definition"}]}
+Base ONLY on: ${mt||"No text materials yet."}`;
+    try{
+      const raw=await callAI(apiKey,"Respond ONLY with valid JSON. No markdown.",[{role:"user",content:prompt}]);
+      const p=parseJSON(raw);
+      if(p?.summary)setSum(p.summary);
+      if(p?.concepts&&Array.isArray(p.concepts))setCon(p.concepts);
+    }catch(e){setSum("Could not generate summary. Start your lesson to begin!")}
+    setSumLoad(null);
+    setState(hasSaved?"returning":"start");
+  }
+
+  // Lumio Lesson
+  const initLumio=async()=>{
+    if(!active||!user||!apiKey)return;
+    setLState("loading");
+    const mats=getMats();
+    const saved=await db.loadSession("L_"+active.id,user.id);
+    if(saved?.length>0)setLMsgs(saved);
+    await loadSummary(mats,setLSum,setLCon,setLSumLoad,setLState,saved?.length>0);
+  };
+  const startLumio=async opt=>{
+    setLState("active");
+    const mats=getMats();
+    const sys=sysLumio(active.name,mats,lessonLevel,lang);
+    const prompt=opt==="continue"?"Continue from where we left off. Ask what the student remembers from last time, then pick up.":opt==="beginning"?"Start from the beginning. Introduce the very first concept from the materials and ask a question.":"The student wants to focus on: \""+opt+"\". Start there with a question.";
+    setLLoad(true);
+    try{
+      const content=buildFirstMsg(mats,prompt);
+      const reply=await callAI(apiKey,sys,[{role:"user",content}]);
+      const msgs=[{role:"lumio",text:reply,id:uid()}];
+      setLMsgs(msgs);speak(reply,"female");
+      await db.saveSession("L_"+active.id,user.id,msgs);
+      addXP(15,"+15 XP!");setLessonCount(c=>c+1);
+      setSubjects(p=>p.map(s=>s.id===active.id?{...s,sessions:(s.sessions||0)+1}:s));
+    }catch(e){setLMsgs([{role:"lumio",text:"⚠️ "+e.message,id:uid()}])}
+    setLLoad(false);
+  };
+  const sendLumio=useCallback(async text=>{
+    if(!text||lLoad)return;
+    speechSynthesis?.cancel();
+    const updated=[...lMsgs,{role:"user",text,id:uid()}];
+    setLMsgs(updated);setLLoad(true);
+    const hist=buildHist(updated);
+    if(!hist){setLLoad(false);return}
+    const mats=getMats();
+    try{
+      const reply=await callAI(apiKey,sysLumio(active.name,mats,lessonLevel,lang),hist);
+      const msgs=[...updated,{role:"lumio",text:reply,id:uid()}];
+      setLMsgs(msgs);speak(reply,"female");
+      await db.saveSession("L_"+active.id,user.id,msgs);
+    }catch(e){setLMsgs([...updated,{role:"lumio",text:"⚠️ "+e.message,id:uid()}])}
+    setLLoad(false);
+  },[lMsgs,lLoad,active,apiKey,getMats,lessonLevel,lang]);
+
+  // Dual Lesson
+  const initDual=async()=>{
+    if(!active||!user||!apiKey)return;
+    setDState("loading");
+    const mats=getMats();
+    const saved=await db.loadSession("D_"+active.id,user.id);
+    if(saved?.length>0)setDMsgs(saved);
+    await loadSummary(mats,setDSum,setDCon,setDSumLoad,setDState,saved?.length>0);
+  };
+  const startDual=async opt=>{
+    setDState("active");
+    const mats=getMats();
+    const sys=sysAtlas(active.name,mats,lessonLevel,lang,[]);
+    const prompt=opt==="continue"?"Continue from our last session. Ask what the student remembers.":opt==="beginning"?"Start from the beginning. Introduce the first concept and ask a question.":"Focus on: \""+opt+"\". Start there.";
+    setDLoad("atlas");
+    try{
+      const content=buildFirstMsg(mats,prompt);
+      const reply=await callAI(apiKey,sys,[{role:"user",content}]);
+      const msgs=[{role:"atlas",text:reply,id:uid()}];
+      setDMsgs(msgs);
+      const q=reply.match(/[^.!?]*\?[^.!?]*/);if(q)setDAsked([q[0].trim()]);
+      speak(reply,"female");
+      await db.saveSession("D_"+active.id,user.id,msgs);
+      addXP(15,"+15 XP!");setLessonCount(c=>c+1);
+    }catch(e){setDMsgs([{role:"atlas",text:"⚠️ "+e.message,id:uid()}])}
+    setDLoad(null);
+  };
+  const sendDual=useCallback(async text=>{
+    if(!text||dLoad)return;
+    speechSynthesis?.cancel();
+    const updated=[...dMsgs,{role:"user",text,id:uid()}];
+    setDMsgs(updated);
+    const hist=buildHist(updated);
+    if(!hist){return}
+    const last=updated.slice().reverse().find(m=>m.role==="atlas"||m.role==="spark");
+    const next=(!last||last.role==="spark")?"atlas":"spark";
+    setDLoad(next);
+    const mats=getMats();
+    const sys=next==="atlas"?sysAtlas(active.name,mats,lessonLevel,lang,dAsked):sysSpark(active.name,mats,lang,dAsked);
+    try{
+      const reply=await callAI(apiKey,sys,hist);
+      const msgs=[...updated,{role:next,text:reply,id:uid()}];
+      setDMsgs(msgs);
+      const q=reply.match(/[^.!?]*\?[^.!?]*/);if(q)setDAsked(p=>[...p,q[0].trim()].slice(-20));
+      speak(reply,next==="atlas"?"female":"male");
+      await db.saveSession("D_"+active.id,user.id,msgs);
+    }catch(e){setDMsgs([...updated,{role:next,text:"⚠️ "+e.message,id:uid()}])}
+    setDLoad(null);
+  },[dMsgs,dLoad,active,apiKey,getMats,lessonLevel,lang,dAsked]);
+
+  // Chat
+  const initChat=async()=>{
+    if(!active||!apiKey)return;
+    setCSumLoad(true);
+    const mats=getMats();
+    const mt=matText(mats);
+    if(!mt){setCSumLoad(false);return}
+    try{
+      const raw=await callAI(apiKey,"Respond ONLY with valid JSON.",[{role:"user",content:`Summary in ${lang} for "${active.name}".\n{"summary":"2-3 sentences","concepts":[{"term":"name","def":"brief"}]}\nBase on:\n${mt}`}]);
+      const p=parseJSON(raw);if(p?.summary)setCSum(p.summary);
+    }catch{}
+    setCSumLoad(false);
+  };
+  const sendChat=useCallback(async text=>{
+    if(!text||cLoad)return;setCInp("");
+    const updated=[...cMsgs,{role:"user",text,id:uid()}];setCMsgs(updated);setCLoad(true);
+    const hist=buildHist(updated);
+    if(!hist){setCLoad(false);return}
+    const mats=getMats();
+    try{
+      const reply=await callAI(apiKey,sysChat(active.name,mats,lang),hist);
+      setCMsgs([...updated,{role:"lumio",text:reply,id:uid()}]);
+    }catch(e){setCMsgs([...updated,{role:"lumio",text:"⚠️ "+e.message,id:uid()}])}
+    setCLoad(false);
+  },[cMsgs,cLoad,active,apiKey,getMats,lang]);
+  const[chatMicOn,chatMicStart]=useMic(useCallback(t=>sendChat(t),[sendChat]));
+
+  // Quiz
+  const genQuiz=async lv=>{
+    const l=lv||qLvl;setQLoad(true);setQData(null);setQAns({});setQDone(false);
+    const mats=getMats();
+    const mt=matText(mats);
+    if(!mt){setQData({error:"Add materials first to generate a quiz."});setQLoad(false);return}
+    try{
+      const raw=await callAI(apiKey,"Respond ONLY with valid JSON.",[{role:"user",content:`Generate 6 exam-quality multiple choice questions in ${lang} for "${active.name}". Level: ${l}.\n{"questions":[{"q":"?","options":["A","B","C","D"],"answer":0,"explanation":"why this is correct","source":"doc name"}]}\nBase ONLY on:\n${mt}`}]);
+      const p=parseJSON(raw);
+      setQData(p?.questions?p:{error:"Could not generate. Try again."});
+      if(p?.questions)addXP(5,"+5 XP!");
+    }catch(e){setQData({error:e.message})}
+    setQLoad(false);
+  };
+  const submitQuiz=()=>{
+    if(!qData?.questions)return;setQDone(true);
+    const c=qData.questions.filter((q,i)=>qAns[i]===q.answer).length;
+    if(c>0)addXP(c*10,`+${c*10} XP!`);
+    if(c===qData.questions.length)addXP(25,"+25 XP Perfect! 🎯");
+    setCorrectCount(x=>x+c);
+  };
+
+  const lvlLabel=xp=>xp>=1000?"💎 Expert":xp>=500?"⭐ Scholar":xp>=200?"📖 Student":xp>=50?"🌱 Learner":"🌱 Beginner";
+  const NAV=[{id:"subjects",ic:"📚",lb:"Subjects"},{id:"lesson",ic:"📞",lb:"Lesson"},{id:"dual",ic:"🤖",lb:"Dual AI"},{id:"chat",ic:"💬",lb:"Chat"},{id:"profile",ic:"👤",lb:"Profile"}];
+
+  // -- RENDERS --
+  if(authLoad)return h("div",{style:{height:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,background:"#f0f2ff"}},
+    h("div",{className:"logo-ic"},"🎓"),
+    h("div",{style:{fontFamily:"Playfair Display,serif",fontSize:"1.6rem",color:"#d4a017"}},"Lumio"),
+    h("div",{style:{color:"#6b7299",fontSize:".84rem"}},"Loading...")
+  );
+
+  if(!user)return h("div",{className:"auth-wrap"},
+    h("div",{className:"auth-box"},
+      h("div",{className:"logo-ic"},"🎓"),
+      h("div",{className:"brand"},"Lumio"),
+      h("p",{className:"sub"},"AI-powered dual study assistant"),
+      h("div",{className:"tabs"},
+        h("button",{className:"tab "+(authMode==="login"?"on":""),onClick:()=>{setAuthMode("login");setAuthMsg({t:"",c:""})}},"Sign In"),
+        h("button",{className:"tab "+(authMode==="signup"?"on":""),onClick:()=>{setAuthMode("signup");setAuthMsg({t:"",c:""})}}, "Create Account")
+      ),
+      authMsg.t&&h("div",{className:"alert "+(authMsg.c==="ok"?"a-ok":"a-err")},authMsg.t),
+      h("span",{className:"lbl"},"Email"),
+      h("input",{type:"email",value:email,onChange:e=>setEmail(e.target.value),placeholder:"your@email.com",onKeyDown:e=>{if(e.key==="Enter")authMode==="login"?signIn():signUp()}}),
+      h("span",{className:"lbl"},"Password"),
+      h("input",{type:"password",value:pass,onChange:e=>setPass(e.target.value),placeholder:"Min. 6 characters",onKeyDown:e=>{if(e.key==="Enter")authMode==="login"?signIn():signUp()}}),
+      h("button",{className:"btn-g",disabled:authBusy||!email||!pass,onClick:authMode==="login"?signIn:signUp},authBusy?"Please wait...":authMode==="login"?"Sign In ->":"Create Account ->"),
+      h("div",{style:{marginTop:20,display:"flex",flexDirection:"column",gap:9}},
+        ...["🤖 Atlas & Spark - two AI tutors pushing you forward","📚 100% based on your uploaded materials","💾 Sessions saved - continue where you left off","🌍 10+ languages - AI speaks your language"].map(t=>
+          h("div",{key:t,style:{display:"flex",gap:10,alignItems:"center",fontSize:".83rem",color:"#6b7299"}},
+            h("span",{style:{width:28,height:28,borderRadius:8,background:"#fef9e7",border:"1px solid #f0c84a44",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14}},t.slice(0,2)),
+            t.slice(3)
+          )
+        )
+      )
+    )
+  );
+
+  if(!apiKey)return h("div",{className:"auth-wrap"},
+    h("div",{className:"auth-box"},
+      h("div",{style:{textAlign:"center",marginBottom:24}},
+        h("div",{style:{fontSize:52,marginBottom:10}},"🔑"),
+        h("div",{className:"brand"},"API Key"),
+        h("p",{className:"sub"},"Enter your Anthropic API key once.\nIt's stored only in your browser.")
+      ),
+      h("span",{className:"lbl"},"Anthropic API Key"),
+      h("input",{type:"password",value:apiIn,onChange:e=>setApiIn(e.target.value),placeholder:"sk-ant-api03-...",onKeyDown:e=>{if(e.key==="Enter"&&apiIn.startsWith("sk-")){S.set("lm_key",apiIn.trim());setApiKey(apiIn.trim())}}}),
+      h("button",{className:"btn-g",disabled:!apiIn.startsWith("sk-"),onClick:()=>{S.set("lm_key",apiIn.trim());setApiKey(apiIn.trim())}},"🚀 Start Lumio"),
+      h("div",{style:{marginTop:14,padding:"10px 12px",background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:11,fontSize:".78rem",color:"#2563eb",lineHeight:1.6}},"💡 Get your free key at ",h("strong",null,"console.anthropic.com")),
+      h("button",{style:{width:"100%",marginTop:10,padding:10,background:"none",border:"none",color:"#6b7299",fontFamily:"Inter,sans-serif",fontSize:".8rem",cursor:"pointer"},onClick:signOut},"<- Sign out")
+    )
+  );
+
+  // MAIN APP
+  return h(F,null,
+    xpPop&&h("div",{className:"xp-pop",key:xpPop.k},xpPop.lbl+" ⭐"),
+
+    // Language modal
+    showLang&&h("div",{className:"overlay",onClick:()=>setShowLang(false)},
+      h("div",{className:"sheet",onClick:e=>e.stopPropagation()},
+        h("div",{className:"handle"}),
+        h("div",{className:"sh-title"},"Language / Sprache / Langue"),
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+          ...LANGS.map(l=>h("button",{key:l,style:{padding:"11px",background:lang===l?"#fef9e7":"#f5f7ff",border:"1.5px solid "+(lang===l?"#f0c84a":"#dde2f0"),borderRadius:12,cursor:"pointer",fontFamily:"Inter,sans-serif",fontSize:".84rem",fontWeight:600,display:"flex",alignItems:"center",gap:8,color:lang===l?"#d4a017":"#1a1f3a"},onClick:()=>{setLang(l);S.set("lm_lang",l);setShowLang(false)}},
+            h("span",{style:{fontSize:20}},LANG_FLAGS[l]||"🌍"),l
+          ))
+        )
+      )
+    ),
+
+    h("div",{className:"app"},
+      // TOP BAR
+      h("div",{className:"top"},
+        h("div",{className:"brand-sm"},"🎓 Lumio"),
+        h("div",{className:"top-chips"},
+          h("button",{className:"chip chip-blue",onClick:()=>setShowLang(true)},LANG_FLAGS[lang]||"🌍"," ",lang.slice(0,3)),
+          active&&(tab==="lesson"||tab==="dual"||tab==="chat"||tab==="subject")&&h("button",{className:"chip",style:{background:active.color+"18",border:"1px solid "+active.color+"44",color:active.color}},active.emoji+" "+active.name.slice(0,8)),
+          h("button",{className:"chip chip-gold",onClick:()=>setTab("profile")},"⭐ "+xp)
+        )
+      ),
+
+      // -- SUBJECTS --
+      tab==="subjects"&&h("div",{className:"page"},
+        h("div",{className:"pg-title"},"My Subjects"),
+        h("div",{className:"pg-sub"},"Choose a subject to study with AI"),
+        h("div",{className:"new-card",onClick:()=>setShowNewSub(true)},
+          h("div",{style:{width:44,height:44,borderRadius:13,background:"linear-gradient(135deg,#f0c84a,#e07d2a)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}},"➕"),
+          h("div",null,h("div",{style:{fontWeight:700,color:"#d4a017",fontSize:".94rem"}},"New Subject"),h("div",{style:{fontSize:".74rem",color:"#6b7299",marginTop:2}},"Upload books, slides, notes"))
+        ),
+        subjects.length===0&&h("div",{style:{textAlign:"center",padding:"48px 20px"}},
+          h("div",{style:{fontSize:60,opacity:.1,marginBottom:12}},"📚"),
+          h("div",{style:{fontWeight:700,color:"#6b7299",marginBottom:6}},"No subjects yet"),
+          h("div",{style:{fontSize:".84rem",color:"#9ca3af",lineHeight:1.6,maxWidth:280,margin:"0 auto"}},"Create your first subject and upload your study materials.")
+        ),
+        ...subjects.map(s=>h("div",{key:s.id,className:"subj-card",style:{borderLeft:"3px solid "+s.color},onClick:()=>{setActive(s);setTab("subject")}},
+          h("div",{style:{width:48,height:48,borderRadius:13,background:s.color+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}},s.emoji),
+          h("div",{style:{flex:1,minWidth:0}},h("div",{style:{fontWeight:700,fontSize:".94rem",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},s.name),h("div",{style:{fontSize:".72rem",color:"#6b7299"}},(s.materials?.length||0)+" materials · "+(s.sessions||0)+" lessons")),
+          h("div",{style:{color:"#c4ccee",fontSize:18}},"›")
+        ))
+      ),
+
+      // -- SUBJECT DETAIL --
+      tab==="subject"&&active&&h(F,null,
+        h("div",{style:{padding:"10px 14px 10px",background:"#fff",borderBottom:"1px solid #eef0f8",flexShrink:0}},
+          h("button",{style:{background:"none",border:"none",color:"#6b7299",fontFamily:"Inter,sans-serif",fontSize:".8rem",cursor:"pointer",marginBottom:8},onClick:()=>setTab("subjects")},"<- All Subjects"),
+          h("div",{style:{fontFamily:"Playfair Display,serif",fontSize:"1.2rem",color:"#d4a017",display:"flex",alignItems:"center",gap:10,marginBottom:8}},h("span",{style:{fontSize:26}},active.emoji),active.name),
+          h("div",null,
+            h("span",{className:"tag",style:{background:active.color+"18",color:active.color}},(active.materials?.length||0)+" materials"),
+            h("span",{className:"tag",style:{background:"#d1fae5",color:"#059669"}},(active.sessions||0)+" lessons"),
+            h("button",{className:"tag",style:{background:"#fee2e2",color:"#dc2626",border:"none",cursor:"pointer"},onClick:()=>setShowDel(active.id)},"🗑 Delete")
+          )
+        ),
+        h("div",{className:"page"},
+          h("div",{className:"sec-title"},"Choose Lesson Type"),
+          h("div",{className:"lvl-grid",style:{marginBottom:12}},
+            ...LEVELS.map(l=>h("div",{key:l.id,className:"lvl "+(lessonLevel===l.id?"on":""),onClick:()=>setLessonLevel(l.id)},h("div",{style:{fontSize:".84rem",fontWeight:700,marginBottom:2,color:lessonLevel===l.id?"#d4a017":undefined}},l.l),h("div",{style:{fontSize:".7rem",color:"#6b7299"}},l.d)))
+          ),
+          h("button",{className:"mode-btn",disabled:!hasMats||!apiKey,onClick:()=>{setTab("lesson");if(lState==="idle")initLumio()}},
+            h("div",{className:"mode-ic",style:{background:"#fef9e7",border:"1px solid #f0c84a44"}},"📞"),
+            h("div",{style:{flex:1}},h("div",{style:{fontWeight:700,fontSize:".94rem",marginBottom:3}},"Lumio Lesson"),h("div",{style:{fontSize:".78rem",color:"#6b7299",lineHeight:1.5}},"One AI tutor · Teaches step by step · Voice")),
+            h("div",{style:{color:"#c4ccee",fontSize:18}},"›")
+          ),
+          h("button",{className:"mode-btn",disabled:!hasMats||!apiKey,onClick:()=>{setTab("dual");if(dState==="idle")initDual()}},
+            h("div",{className:"mode-ic",style:{background:"linear-gradient(135deg,#eff6ff,#fff1f2)",border:"1px solid #dde2f0"}},"🤖"),
+            h("div",{style:{flex:1}},h("div",{style:{fontWeight:700,fontSize:".94rem",marginBottom:3}},"Atlas + Spark"),h("div",{style:{fontSize:".78rem",color:"#6b7299",lineHeight:1.5}},"Atlas explains · Spark challenges · Voice")),
+            h("div",{style:{color:"#c4ccee",fontSize:18}},"›")
+          ),
+          h("button",{className:"mode-btn",disabled:!hasMats||!apiKey,onClick:()=>{setTab("chat");if(!cSum&&!cSumLoad)initChat()}},
+            h("div",{className:"mode-ic",style:{background:"#f0fdf4",border:"1px solid #bbf7d0"}},"💬"),
+            h("div",{style:{flex:1}},h("div",{style:{fontWeight:700,fontSize:".94rem",marginBottom:3}},"Chat with Lumio"),h("div",{style:{fontSize:".78rem",color:"#6b7299",lineHeight:1.5}},"Ask anything · Exam-ready answers · Voice")),
+            h("div",{style:{color:"#c4ccee",fontSize:18}},"›")
+          ),
+          !hasMats&&h("div",{style:{padding:"10px 14px",background:"#fff3cd",border:"1px solid #ffc107",borderRadius:11,fontSize:".82rem",color:"#856404",marginBottom:14}},"⚠️ Upload your study materials first to start a lesson."),
+          h("div",{className:"sec-title"},"Materials ("+(active.materials?.length||0)+")"),
+          h("button",{className:"add-mat-btn",onClick:()=>setShowAddMat(true)},"➕ Add material (PDF, text, image)"),
+          ...(active.materials||[]).map(m=>h("div",{key:m.id,className:"mat-row"},
+            h("span",{style:{fontSize:20,flexShrink:0}},m.kind==="image"?"🖼️":m.kind==="video"?"🎬":"📄"),
+            h("div",{style:{flex:1,minWidth:0}},
+              h("div",{style:{fontSize:".84rem",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},m.name),
+              h("div",{style:{fontSize:".7rem",color:"#6b7299",marginTop:1}},m.kind==="text"||m.kind==="pdf"?(m.text?.length||0)+" chars":m.kind)
+            ),
+            h("button",{style:{background:"none",border:"none",cursor:"pointer",opacity:.3,fontSize:16,padding:"4px 8px",flexShrink:0,WebkitTapHighlightColor:"transparent"},onClick:()=>delMat(m.id)},"🗑")
+          ))
+        )
+      ),
+
+      // -- LUMIO LESSON --
+      tab==="lesson"&&active&&h("div",{className:"lesson-page"},
+        h("div",{className:"lesson-hdr"},
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
+            h("button",{style:{background:"none",border:"none",color:"#6b7299",fontFamily:"Inter,sans-serif",fontSize:".78rem",cursor:"pointer",padding:"4px 0",WebkitTapHighlightColor:"transparent"},onClick:()=>{speechSynthesis?.cancel();setLState("idle");setTab("subject")}},"<- Back"),
+            h("span",{style:{fontSize:".72rem",color:"#6b7299"}},active.emoji+" "+active.name)
+          ),
+          h("div",{style:{display:"flex",alignItems:"center",gap:8}},
+            h("div",{style:{padding:"4px 12px",background:"#fef9e7",border:"1px solid #f0c84a44",borderRadius:20,fontSize:".74rem",fontWeight:700,color:"#d4a017"}},"🎓 Lumio Lesson"),
+            h("button",{style:{marginLeft:"auto",padding:"4px 10px",borderRadius:20,fontSize:".7rem",background:"#f5f7ff",border:"1px solid #dde2f0",color:"#6b7299",cursor:"pointer",fontFamily:"Inter,sans-serif",WebkitTapHighlightColor:"transparent"},onClick:()=>speechSynthesis?.cancel()},"🔇")
+          )
+        ),
+        (lState==="loading"||lSumLoad)&&h(WherePanel,{loading:lSumLoad||"Loading..."}),
+        (lState==="start"||lState==="returning")&&!lSumLoad&&h(WherePanel,{summary:lSum,concepts:lCon,isReturning:lState==="returning",onStart:startLumio}),
+        lState==="active"&&h(LessonUI,{msgs:lMsgs,loading:lLoad,loadingRole:"lumio",onSend:sendLumio,showHints:true,lang})
+      ),
+
+      // -- DUAL LESSON --
+      tab==="dual"&&active&&h("div",{className:"lesson-page"},
+        h("div",{className:"lesson-hdr"},
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
+            h("button",{style:{background:"none",border:"none",color:"#6b7299",fontFamily:"Inter,sans-serif",fontSize:".78rem",cursor:"pointer",padding:"4px 0",WebkitTapHighlightColor:"transparent"},onClick:()=>{speechSynthesis?.cancel();setDState("idle");setTab("subject")}},"<- Back"),
+            h("span",{style:{fontSize:".72rem",color:"#6b7299"}},active.emoji+" "+active.name)
+          ),
+          h("div",{style:{display:"flex",gap:6,alignItems:"center"}},
+            h("div",{style:{padding:"4px 10px",background:"#eff6ff",borderRadius:20,fontSize:".72rem",fontWeight:700,color:"#2563eb"}},"🎓 Atlas"),
+            h("span",{style:{color:"#c4ccee",fontSize:12}},"+"),
+            h("div",{style:{padding:"4px 10px",background:"#fff1f2",borderRadius:20,fontSize:".72rem",fontWeight:700,color:"#dc2626"}},"⚡ Spark"),
+            h("button",{style:{marginLeft:"auto",padding:"4px 10px",borderRadius:20,fontSize:".7rem",background:"#f5f7ff",border:"1px solid #dde2f0",color:"#6b7299",cursor:"pointer",fontFamily:"Inter,sans-serif",WebkitTapHighlightColor:"transparent"},onClick:()=>speechSynthesis?.cancel()},"🔇")
+          )
+        ),
+        (dState==="loading"||dSumLoad)&&h(WherePanel,{loading:dSumLoad||"Loading..."}),
+        (dState==="start"||dState==="returning")&&!dSumLoad&&h(WherePanel,{summary:dSum,concepts:dCon,isReturning:dState==="returning",onStart:startDual}),
+        dState==="active"&&h(LessonUI,{msgs:dMsgs,loading:!!dLoad,loadingRole:dLoad||"atlas",onSend:sendDual,showHints:true,lang})
+      ),
+
+      // -- CHAT --
+      tab==="chat"&&active&&h("div",{className:"lesson-page"},
+        h("div",{className:"lesson-hdr"},
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+            h("button",{style:{background:"none",border:"none",color:"#6b7299",fontFamily:"Inter,sans-serif",fontSize:".78rem",cursor:"pointer",padding:"4px 0",WebkitTapHighlightColor:"transparent"},onClick:()=>setTab("subject")},"<- Back"),
+            h("span",{style:{fontSize:".72rem",color:"#6b7299"}},active.emoji+" "+active.name)
+          ),
+          h("div",{style:{fontSize:".75rem",color:"#6b7299",marginTop:4}},"💬 Ask anything about your materials")
+        ),
+        h("div",{className:"msgs-area"},
+          cSumLoad&&h("div",{style:{display:"flex",gap:8,alignItems:"center",color:"#6b7299",fontSize:".84rem"}},h("div",{className:"spin",style:{width:16,height:16}}),"Loading summary..."),
+          cSum&&cMsgs.length===0&&h("div",{className:"sum-box"},
+            h("div",{style:{fontSize:".7rem",fontWeight:700,color:"#d4a017",letterSpacing:".8px",textTransform:"uppercase",marginBottom:8}},"📋 SUMMARY"),
+            h("div",{style:{fontSize:".88rem",lineHeight:1.75},dangerouslySetInnerHTML:{__html:hl(cSum)}}),
+            h("div",{style:{display:"flex",flexWrap:"wrap",gap:5,marginTop:10}},
+              ...["What will be on the exam?","Summarize key concepts","Give me a sample question","What should I focus on?"].map(q=>h("button",{key:q,className:"hint",onClick:()=>sendChat(q)},q))
+            )
+          ),
+          !cSum&&!cSumLoad&&cMsgs.length===0&&h("div",{style:{textAlign:"center",padding:"32px 20px"}},h("div",{style:{fontSize:48,marginBottom:10}},"💬"),h("div",{style:{fontWeight:600,color:"#6b7299",marginBottom:6}},"Ask anything"),h("div",{style:{fontSize:".84rem",color:"#9ca3af"}},"Lumio will answer based on your uploaded materials.")),
+          ...cMsgs.map((m,i)=>h("div",{key:m.id||i,className:"msg-block"},
+            m.role!=="user"&&h("div",{className:"msg-who",style:{color:"#d4a017"}},"🎓 LUMIO"),
+            h("div",{className:"msg-r"+(m.role==="user"?" usr":"")},
+              m.role!=="user"&&h("div",{className:"av",style:{background:"#fef9e7",borderColor:"#f0c84a44"}},"🎓"),
+              m.role==="user"&&h("div",{className:"av",style:{background:"#f0fdf4",borderColor:"#bbf7d0"}},"👤"),
+              h("div",{className:"bub "+(m.role==="user"?"bub-U":"bub-L"),dangerouslySetInnerHTML:{__html:hl(m.text)}})
+            )
+          )),
+          cLoad&&h("div",{className:"msg-block"},h("div",{className:"msg-who",style:{color:"#d4a017"}},"🎓 LUMIO thinking..."),h("div",{className:"msg-r"},h("div",{className:"av",style:{background:"#fef9e7",borderColor:"#f0c84a44"}},"🎓"),h("div",{className:"typing",style:{background:"#fef9e7",border:"1px solid #f0c84a44"}},h("div",{className:"dp",style:{background:"#d4a017"}}),h("div",{className:"dp",style:{background:"#d4a017"}}),h("div",{className:"dp",style:{background:"#d4a017"}})))),
+          h("div",{ref:cEndRef})
+        ),
+        h("div",{className:"inp-area"},
+          h("div",{className:"inp-row"},
+            h("button",{className:"mic-btn"+(chatMicOn?" on":""),onClick:chatMicStart},chatMicOn?"⏹":"🎤"),
+            h("textarea",{className:"txt-inp",value:cInp,onChange:e=>setCInp(e.target.value),onKeyDown:e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat(cInp);setCInp("")}},placeholder:"Ask about your materials...",disabled:cLoad,rows:1}),
+            h("button",{className:"send-btn",onClick:()=>{sendChat(cInp);setCInp("")},disabled:cLoad||!cInp.trim()},"➤")
+          )
+        )
+      ),
+
+      // No subject selected
+      (tab==="lesson"||tab==="dual"||tab==="chat")&&!active&&h("div",{style:{flex:1,di      (tab==="lesson"||tab==="dual"||tab==="chat")&&!active&&h("div",{style:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,padding:24}},
+        h("div",{style:{fontSize:60,opacity:.1}},"📚"),
+        h("div",{style:{fontWeight:700,color:"#6b7299"}},"No subject selected"),
+        h("button",{className:"btn-s",onClick:()=>setTab("subjects")},"<- Go to Subjects")
+      ),
+
+      // QUIZ
+      tab==="quiz"&&h("div",{className:"page"},
+        h("div",{className:"pg-title"},"🎯 Quiz"),
+        h("div",{className:"pg-sub"},active?active.name:"Select a subject"),
+        active?h(F,null,
+          h("div",{className:"lvl-grid"},...LEVELS.map(l=>h("div",{key:l.id,className:"lvl "+(qLvl===l.id?"on":""),onClick:()=>setQLvl(l.id)},h("div",{style:{fontSize:".84rem",fontWeight:700,marginBottom:2,color:qLvl===l.id?"#d4a017":undefined}},l.l),h("div",{style:{fontSize:".7rem",color:"#6b7299"}},l.d)))),
+          h("button",{className:"btn-g",style:{marginBottom:14},disabled:qLoad||!hasMats||!apiKey,onClick:()=>genQuiz(qLvl)},qLoad?"⏳ Generating...":"🎲 Generate Quiz"),
+          !hasMats&&h("div",{style:{color:"#856404",padding:"10px",background:"#fff3cd",borderRadius:10,fontSize:".84rem",marginBottom:10}},"⚠️ Upload materials first"),
+          qLoad&&h("div",{style:{display:"flex",gap:8,alignItems:"center",color:"#6b7299",fontSize:".84rem",marginBottom:10}},h("div",{className:"spin",style:{width:18,height:18}}),"Generating..."),
+          qData?.error&&h("div",{style:{color:"#dc2626",padding:"10px",background:"#fee2e2",borderRadius:10,fontSize:".84rem",marginBottom:10}},"❌ "+qData.error),
+          ...(qData?.questions||[]).map((q,qi)=>h("div",{key:qi,className:"q-card"},
+            h("div",{style:{fontSize:".7rem",color:"#2563eb",marginBottom:8}},"📖 "+(q.source||active.name)),
+            h("div",{style:{fontWeight:600,marginBottom:10,fontSize:".9rem",lineHeight:1.65}},qi+1+". "+q.q),
+            ...q.options.map((o,oi)=>{let c="opt";if(qAns[qi]===oi)c+=" sel";if(qDone){if(oi===q.answer)c="opt ok";else if(qAns[qi]===oi)c="opt no"}return h("div",{key:oi,className:c,onClick:()=>!qDone&&setQAns(p=>({...p,[qi]:oi}))},h("span",{style:{opacity:.4,flexShrink:0}},["A","B","C","D"][oi]+". "),o)}),
+            qDone&&h("div",{className:"expl"},"💡 "+q.explanation)
+          )),
+          qData?.questions&&h("div",{style:{display:"flex",gap:8,marginBottom:16}},!qDone?h("button",{className:"btn-g",style:{flex:1},onClick:submitQuiz,disabled:Object.keys(qAns).length<qData.questions.length},"✅ Check Answers"):h(F,null,h("button",{className:"btn-s",onClick:()=>{setQDone(false);setQAns({})}},"🔄 Try Again"),h("button",{className:"btn-g",style:{flex:1},onClick:()=>genQuiz(qLvl)},"🎲 New Quiz")))
+        ):h("div",{style:{textAlign:"center",padding:"48px 20px"}},h("div",{style:{fontSize:56,opacity:.1,marginBottom:12}},"🎯"),h("button",{className:"btn-s",style:{marginTop:14},onClick:()=>setTab("subjects")},"Go to Subjects"))
+      ),
+
+      // PROFILE
+      tab==="profile"&&h("div",{className:"page"},
+        h("div",{className:"pg-title"},"👤 Profile"),
+        h("div",{style:{background:"#fef9e7",border:"1px solid #f0c84a44",borderRadius:16,padding:18,marginBottom:16,display:"flex",alignItems:"center",gap:14}},
+          h("div",{style:{fontSize:"2.2rem"}},xp>=1000?"💎":xp>=500?"⭐":xp>=200?"📖":"🌱"),
+          h("div",null,h("div",{style:{fontFamily:"Playfair Display,serif",fontSize:"1.1rem",color:"#d4a017",fontWeight:700}},lvlLabel(xp)),h("div",{style:{fontSize:".74rem",color:"#6b7299",marginTop:3}},xp+" XP"),h("div",{className:"progress-bar"},h("div",{className:"progress-fill",style:{width:Math.min(100,(xp%500)/5)+"%"}})))
+        ),
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}},...[{n:xp,l:"⭐ XP"},{n:lessonCount,l:"🎓 Lessons"},{n:subjects.length,l:"📚 Subjects"},{n:correctCount,l:"✅ Correct"}].map(({n,l})=>h("div",{key:l,style:{background:"#fff",border:"1px solid #eef0f8",borderRadius:13,padding:16,textAlign:"center"}},h("div",{style:{fontSize:"1.8rem",fontWeight:800,color:"#d4a017",lineHeight:1}},n),h("div",{style:{fontSize:".7rem",color:"#6b7299",marginTop:5}},l)))),
+        h("div",{style:{background:"#fff",border:"1px solid #eef0f8",borderRadius:14,padding:14}},
+          h("div",{style:{fontWeight:600,fontSize:".84rem",marginBottom:8}},"⚙️ Account"),
+          h("div",{style:{fontSize:".74rem",color:"#6b7299",marginBottom:10}},user?.email),
+          h("button",{className:"btn-s",style:{width:"100%",marginBottom:8,display:"block"},onClick:()=>setShowLang(true)},"🌍 "+LANG_FLAGS[lang]+" "+lang),
+          h("button",{className:"btn-s",style:{width:"100%",marginBottom:8,display:"block"},onClick:()=>{S.del("lm_key");setApiKey("")}},"🔑 Change API Key"),
+          h("button",{className:"btn-r",style:{width:"100%",display:"block"},onClick:signOut},"🚪 Sign Out")
+        )
+      ),
+
+      // MODALS
+      showNewSub&&h("div",{className:"overlay",onClick:()=>setShowNewSub(false)},
+        h("div",{className:"sheet",onClick:e=>e.stopPropagation()},
+          h("div",{className:"handle"}),h("div",{className:"sh-title"},"Create New Subject"),
+          h("span",{className:"lbl"},"Name"),
+          h("input",{type:"text",value:subName,onChange:e=>setSubName(e.target.value),placeholder:"e.g. Anatomy, History...",autoFocus:true}),
+          h("span",{className:"lbl"},"Icon"),
+          h("div",{className:"emoji-grid"},...["📚","🧪","🏛️","💻","🫀","🔬","⚗️","🌍","➕","🎭","🎵","⚖️","🏥","✈️","🌿","📐","🧬","💡"].map(e=>h("button",{key:e,className:"emj "+(subEmoji===e?"on":""),onClick:()=>setSubEmoji(e)},e))),
+          h("span",{className:"lbl"},"Color"),
+          h("div",{className:"clr-row"},...["#f0c84a","#34d399","#60a5fa","#a78bfa","#f87171","#fb923c","#22d3ee"].map(c=>h("button",{key:c,className:"clr "+(subColor===c?"on":""),style:{background:c},onClick:()=>setSubColor(c)}))),
+          h("button",{className:"btn-g",disabled:!subName.trim(),onClick:createSub},"✅ Create Subject")
+        )
+      ),
+
+      showAddMat&&h("div",{className:"overlay",onClick:()=>{if(!uploading)setShowAddMat(false)}},
+        h("div",{className:"sheet",onClick:e=>e.stopPropagation(),style:{maxHeight:"82vh"}},
+          h("div",{className:"handle"}),h("div",{className:"sh-title"},"Add Material"),
+          h("div",{className:"tab-row"},...[{id:"file",l:"📁 File"},{id:"paste",l:"📋 Paste Text"},{id:"video",l:"🎬 Video"}].map(t=>h("button",{key:t.id,className:"tb "+(matTab===t.id?"on":""),onClick:()=>setMatTab(t.id)},t.l))),
+          matTab==="file"&&(uploading
+            ?h("div",{style:{textAlign:"center",padding:"40px 20px"}},h("div",{className:"spin",style:{width:36,height:36,borderWidth:3,margin:"0 auto 16px"}}),h("div",{style:{fontWeight:600,color:"#d4a017"}},"Processing file..."),h("div",{style:{fontSize:".78rem",color:"#6b7299",marginTop:6}},"Extracting text, please wait..."))
+            :h(F,null,
+              h("div",{className:"drop-zone",onClick:e=>{e.stopPropagation();fileRef.current?.click()}},
+                h("div",{style:{fontSize:36,marginBottom:12}},"📁"),
+                h("div",{style:{fontWeight:600,marginBottom:6}},"Tap to upload file"),
+                h("div",{style:{fontSize:".78rem",color:"#6b7299"}},"PDF · Image · Text · Word"),
+                h("input",{ref:fileRef,type:"file",multiple:true,accept:"image/*,.pdf,.txt,.md",style:{display:"none"},onChange:onFile})
+              ),
+              h("div",{style:{marginTop:12,padding:"12px 14px",background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:11,fontSize:".78rem",color:"#065f46",lineHeight:1.6}},"✅ PDF text is extracted automatically. For large books, use Paste Text instead.")
+            )
+          ),
+          matTab==="paste"&&h(F,null,
+            h("input",{type:"text",value:pasteN,onChange:e=>setPasteN(e.target.value),placeholder:"Name (e.g. Chapter 1, Lecture notes)"}),
+            h("textarea",{value:pasteT,onChange:e=>setPasteT(e.target.value),placeholder:"Paste your text here - copy from any PDF, Word or website.",style:{minHeight:160}}),
+            h("button",{className:"btn-g",disabled:!pasteT.trim(),onClick:addPaste},"✅ Save Text")
+          ),
+          matTab==="video"&&h(F,null,
+            h("input",{type:"text",value:vidUrl,onChange:e=>setVidUrl(e.target.value),placeholder:"https://youtube.com/watch?v=..."}),
+            h("button",{className:"btn-g",disabled:!vidUrl.trim(),onClick:addVid},"✅ Add Video")
+          )
+        )
+      ),
+
+      showDel&&h("div",{className:"overlay",onClick:()=>setShowDel(null)},
+        h("div",{className:"sheet",onClick:e=>e.stopPropagation()},
+          h("div",{className:"handle"}),
+          h("div",{style:{fontFamily:"Playfair Display,serif",fontSize:"1.1rem",color:"#dc2626",marginBottom:10}},"🗑 Delete Subject?"),
+          h("p",{style:{fontSize:".88rem",color:"#6b7299",marginBottom:20,lineHeight:1.6}},"This will permanently delete this subject and all its materials."),
+          h("div",{style:{display:"flex",gap:8}},h("button",{className:"btn-s",style:{flex:1},onClick:()=>setShowDel(null)},"Cancel"),h("button",{className:"btn-r",style:{flex:1},onClick:()=>deleteSub(showDel)},"Delete"))
+        )
+      ),
+
+      // BOTTOM NAV
+      h("div",{className:"nav"},
+        ...NAV.map(n=>h("button",{key:n.id,className:"ni "+(tab===n.id||(tab==="subject"&&n.id==="subjects")?"on":""),
+          onClick:()=>{
+            if(n.id==="subjects")setTab(active&&tab!=="subjects"?"subject":"subjects");
+            else if(n.id==="lesson"){if(active){setTab("lesson");if(lState==="idle")initLumio()}else setTab("subjects")}
+            else if(n.id==="dual"){if(active){setTab("dual");if(dState==="idle")initDual()}else setTab("subjects")}
+            else if(n.id==="chat"){if(active){setTab("chat");if(!cSum&&!cSumLoad)initChat()}else setTab("subjects")}
+            else setTab(n.id);
+          }},
+          h("span",{className:"ni-ic"},n.ic),
+          h("span",{className:"ni-lb"},n.lb),
+          n.id==="lesson"&&lState==="active"&&h("div",{className:"ni-dot"}),
+          n.id==="dual"&&dState==="active"&&h("div",{className:"ni-dot"})
+        ))
+      )
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+} // end startLumio
+</script>
+</body>
+</html>
